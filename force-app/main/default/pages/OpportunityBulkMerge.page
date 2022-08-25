@@ -1,0 +1,159 @@
+<apex:page standardController="Opportunity" recordSetVar="records" lightningStylesheets="true" >
+<!--
+    @description Use this page for a List View Button on the Opportunities Tab
+                  that will merge a document for each record in the list view
+-->
+  <style>
+    .hide {
+      display: none;
+    }
+  </style>
+  <apex:includeScript value="{! $Resource.Mambo__MamboMerge }" />  
+  <apex:slds />
+  <apex:includeLightning />
+  <apex:pageMessages />
+  <apex:form id="form">
+    <div id="successToast" class="slds-notify_container slds-is-relative hide">
+      <div class="slds-notify slds-notify_toast slds-theme_success" role="status">
+        <span class="slds-assistive-text">success</span>
+        <span class="slds-icon_container slds-icon-utility-success slds-m-right_small slds-no-flex slds-align-top" title="Description of icon when needed">
+          <!-- <svg class="slds-icon slds-icon_small" aria-hidden="true">
+           <use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#success"></use>
+          </svg> -->
+        </span>
+        <div class="slds-notify__content">
+          <h2 id="successToastText" class="slds-text-heading_small ">Documents Generated</h2>
+        </div>
+        <div class="slds-notify__close">
+          <button class="slds-button slds-button_icon slds-button_icon-inverse" title="Close">
+            <!-- <svg class="slds-button__icon slds-button__icon_large" aria-hidden="true">
+              <use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#close"></use>
+            </svg> -->
+            <span class="slds-assistive-text">Close</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="spinner" class="slds-notify_container slds-is-relative hide">
+      <div class="slds-notify slds-notify_toast slds-theme_info" role="status">
+        <span class="slds-assistive-text">info</span>
+        <span class="slds-icon_container slds-icon-utility-info slds-m-right_small slds-no-flex slds-align-top" title="Description of icon when needed">
+          <!-- <svg class="slds-icon slds-icon_small" aria-hidden="true">
+            <use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#info"></use>
+          </svg> -->
+        </span>
+        <div class="slds-notify__content">
+          <h2 class="slds-text-heading_small">Please wait while your documents are generated.
+          </h2>
+        </div>
+        <div class="slds-notify__close">
+          <button class="slds-button slds-button_icon slds-button_icon-inverse" title="Close">
+            <!-- <svg class="slds-button__icon slds-button__icon_large" aria-hidden="true">
+              <use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#close"></use>
+            </svg> -->
+            <span class="slds-assistive-text">Close</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- <div id="spinner" class="slds-spinner_container hide">
+      <div role="status" class="slds-spinner slds-spinner_medium slds-spinner_brand slds-spinner_inline">
+        <span class="slds-assistive-text">Loading</span>
+        <div class="slds-spinner__dot-a"></div>
+        <div class="slds-spinner__dot-b"></div>
+      </div>
+    </div> -->
+    <apex:pageBlock title="Document Generation" id="pageBlock" >
+      <apex:pageBlockButtons location="top" id="buttons" >
+        <!-- <apex:commandButton action="{!handleMerge}" value="Generate Docs" onclick="startMerging();" rerender="pageBlock,generating" disabled="{!mode == 'generating'}" /> -->
+        <apex:commandButton action="{!cancel}" value="Back" />
+      </apex:pageBlockButtons>
+      <apex:pageBlockSection id="section" >
+        <apex:pageBlockSectionItem >
+          <apex:outputLabel value="Records Selected" />
+          <apex:outputText value="{!selected.size}" />
+        </apex:pageBlockSectionItem>
+        <apex:pageBlockSectionItem >
+          <apex:outputLabel value="Documents Generated" />
+          <apex:outputText value="0" id="documentsGenerated" />
+        </apex:pageBlockSectionItem>
+
+        <apex:pageBlockSectionItem >
+          <apex:outputLabel value="Template" />
+          <!-- <apex:selectList id="selectedTemplate" value="{!selectedTemplate}" size="1" multiselect="false" >
+            <apex:actionSupport event="onchange" action="{!handleSelect}" reRender="buttons"/>
+            <apex:selectOptions value="{!templateOptions}"/>
+          </apex:selectList> -->
+        </apex:pageBlockSectionItem>
+      </apex:pageBlockSection>
+    </apex:pageBlock>
+
+  </apex:form>
+
+  <apex:pageMessages />
+  <div style="height:1000px;">&nbsp;</div>
+  <div id="lightning" style="display:none;" />
+
+  <script>
+    // TODO (REQUIRED): Please enter your template Id in the var below
+    let TEMPLATE_ID = "BulkOpportunity";
+    let fileName;
+
+    // TODO (REQUIRED): Please specify whether you are using checkboxes on your list view
+    const mergeOnlyCheckedRecordsInListView = true;
+
+    // TODO (OPTIONAL): Enable debug mode if things are working
+    const debugOn = true;
+
+    /*****  DO NOT CHANGE BELOW CODE *****/
+    let completed = 0;
+    const idsString = mergeOnlyCheckedRecordsInListView ? "{!selected}" : "{!records}";
+    let recordIds = idsString.substring(1, idsString.length - 1).split(', ');
+    const selectedSize = 1;
+    let recordIdString = recordIds.join(';')
+
+    function handleMergeEvent(detail){
+      console.log('detail',detail);
+      try {
+        document.getElementById('successToastText').innerHTML = '<a href="/'+detail.Id+'">Download File</a>';
+        document.getElementById('spinner').classList.add("hide");
+        document.getElementById('successToast').classList.remove("hide");
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function mergeBatches(batchSize=200){
+      document.getElementById('spinner').classList.remove("hide");
+
+      if (recordIdString.length > 0 && TEMPLATE_ID) {
+        $Lightning.use("c:mamboMergeApp", function () {
+          let mamboConfig = {
+            debug: debugOn,
+            mergeOnLoad: true,
+            templateId: TEMPLATE_ID,
+            recordId: recordIdString
+          };
+          $Lightning.createComponent(
+            "c:mamboMerge",
+            mamboConfig,
+            "lightning",
+            function (cmp, status, errorMessage) {
+              let mmComponent = document.querySelectorAll('c-mambo-merge');
+              mmComponent[0].addEventListener('merge', (e) => {
+                if ( e.detail.isSuccess === "true" ){
+                  handleMergeEvent(e.detail);
+                } else {
+                  console.error(e);
+                }
+              });
+            }
+          );
+        });
+      }
+    }
+
+    mergeBatches(1);
+  </script>
+
+</apex:page>
