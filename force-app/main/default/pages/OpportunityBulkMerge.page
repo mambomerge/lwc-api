@@ -135,11 +135,11 @@
             recordId: recordIdString
           };
           $Lightning.createComponent(
-            "c:mamboMerge",
+            "mambo:mamboMerge",
             mamboConfig,
             "lightning",
             function (cmp, status, errorMessage) {
-              let mmComponent = document.querySelectorAll('c-mambo-merge');
+              let mmComponent = document.querySelectorAll('mambo-mambo-merge');
               mmComponent[0].addEventListener('merge', (e) => {
                 if ( e.detail.isSuccess === "true" ){
                   handleMergeEvent(e.detail);
