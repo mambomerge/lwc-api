@@ -1,0 +1,45 @@
+<aura:component implements="force:hasRecordId, flexipage:availableForAllPageTypes" >
+  <!-- THIS IS A SAMPLE COMPONENT USED TO DOCUMENT THE MAMBO MERGE LWC API -->
+  <!-- DO NOT USE AS IS -->
+  
+  <aura:attribute name="config" type="Object" required="false"
+      description="Use only for advanced cases when you are supplying all configuration settings to Mambo Merge instead of individual API attributes." />
+
+  <aura:attribute name="debug" type="Boolean" required="false" 
+      description="Set to TRUE to have Mambo Merge output logs in the browser console" />
+
+  <aura:attribute name="templateFile" type="Object" required="false" 
+      description="A json object used to pass in the entire Template file. ex. {body: base64encoded, title: 'MyDoc', fileExtension: 'docx'}" />
+      
+  <aura:attribute name="templateId" type="String" required="true (if not passing in the config attribute or templateFile attribute)" 
+      description="The Id of a single Salesforce File storing your template OR the Configuration Id of your Mambo Merge configuration" />
+      
+  <aura:attribute name="mergeData" type="Object" required="false" 
+      description="Use when you are supplying data to Mambo Merge instead of having Mambo Merge perform queries" />
+  
+   <aura:attribute name="mergeFieldNotation" type="String" required="false" 
+      description="The notation used to designate a string as a Merge Field in your Template, eg Double Curly Braces" 
+      default="{{FieldName}}" />
+  
+  <aura:attribute name="mergeOnLoad" type="Boolean" required="false" 
+      description="Causes Mambo Merge to begin merging immediately upon loading on the page without the user clicking the button" 
+      default="false" />
+
+  <aura:attribute name="objectApiName" type="String" required="false" 
+      description="The name of the Salesforce Object Mambo Merge is currently on or being used to merge with" />
+
+  <aura:attribute name="recordId" type="String" required="true (if not passing in the mergeData attribute)"
+    description="The Id of the record(s) to be merged into the Template. If passing more than one, can be comma or semicolon delimiated" />
+
+    <mambo:mamboMerge 
+      config="{!v.config}"
+      debug="{!v.debug}"
+      mergeData="{!v.mergeData}" 
+      mergeOnLoad="true"
+      objectApiName="{!v.objectApiName}"
+      recordId="{!v.recordId}" 
+      templateFile="{!v.templateFile}"
+      templateId="{!v.templateId}" 
+     />
+
+</aura:component>	
